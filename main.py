@@ -11,7 +11,7 @@ if __name__ == "__main__":
         print("Argument needed: wav file")
         sys.exit()
 
-    source = Wav(Path(sys.argv[1]))
+    source = Wav(Path(sys.argv[1]), loop=False)
     delay = Delay(DelayParameters(duration=10000, decay=0.2))
 
     p = pyaudio.PyAudio()
