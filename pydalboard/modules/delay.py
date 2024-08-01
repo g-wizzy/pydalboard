@@ -6,7 +6,6 @@ import numpy as np
 
 from pydalboard.signal import SignalInfo
 from pydalboard.modules.base import Module
-from pydalboard.utils import clamp
 
 
 @dataclass
@@ -17,8 +16,8 @@ class DelayParameters:
     MAX_DURATION: ClassVar[int] = 44_800  # TODO: change this
 
     def __post_init__(self):
-        self.duration = clamp(self.duration, 1, self.MAX_DURATION)
-        self.decay = clamp(self.decay, 0, 1)
+        self.duration = max(1, min(self.duration, self.MAX_DURATION))
+        self.decay = max(0, min(self.decay, 1))
 
 
 class Delay(Module):
