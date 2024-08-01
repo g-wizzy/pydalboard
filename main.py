@@ -3,6 +3,7 @@ import sys
 
 import pyaudio
 
+from pydalboard.pipeline import Pipeline
 from pydalboard.signal import Wav
 from pydalboard.modules import Delay, DelayParameters
 
@@ -12,7 +13,6 @@ if __name__ == "__main__":
         sys.exit()
 
     source = Wav(Path(sys.argv[1]), loop=False)
-    delay = Delay(DelayParameters(duration=10000, decay=0.2))
 
     p = pyaudio.PyAudio()
     player = p.open(
@@ -23,7 +23,9 @@ if __name__ == "__main__":
         format=pyaudio.paInt32,
     )
 
+    pipeline = Pipeline(source)
+    pipeline.modules.append(Delay(DelayParameters(duration=10000, decay=0.2)))
+
     while True:
-        frame, signal_info = source.get_signal()
-        processeed = delay.process(frame, signal_info)
+        frame = pipeline.run()
         player.write(frame.tobytes(), 1)
