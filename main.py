@@ -47,8 +47,8 @@ if __name__ == "__main__":
         # )
     )
     pipeline.modules.append(Drive(DriveParameters(gain=3.0, clipping=True)))
-    # pipeline.modules.append(Filter(FilterParameters(cutoff=3000, resonance=1.414, filter_type='low', slope=12)))
-    # pipeline.modules.append(Delay(DelayParameters(duration=10000, decay=0.5)))
+    pipeline.modules.append(Filter(FilterParameters(cutoff=800, resonance=3.1, filter_type='high', slope=12)))
+    pipeline.modules.append(Delay(DelayParameters(delay=300, feedback=0.3), sample_rate=sample_rate))
     
     while True:
         try:

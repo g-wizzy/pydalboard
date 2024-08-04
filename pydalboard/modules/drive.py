@@ -14,6 +14,7 @@ class DriveParameters:
     def __post_init__(self):
         self.gain = max(1.0, self.gain)
 
+
 class Drive(Module):
     def __init__(self, params: DriveParameters):
         self.params = params
