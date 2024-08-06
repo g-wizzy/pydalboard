@@ -61,6 +61,7 @@ class FilterParameters:
 
         return b0, b1, b2, a1, a2
 
+
 class Filter(Module):
     def __init__(self, params: FilterParameters):
         self.params = params
