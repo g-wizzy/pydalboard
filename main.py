@@ -6,36 +6,37 @@ import pyaudio
 
 from pydalboard.pipeline import Pipeline
 from pydalboard.signal import Wav
-from pydalboard.modules import Delay, DelayParameters, Drive, DriveParameters, Filter, FilterParameters, PitchShifting, PitchShiftingParameters
+from pydalboard.modules import (
+    Delay,
+    DelayParameters,
+    Drive,
+    DriveParameters,
+    Filter,
+    FilterParameters,
+    PitchShifting,
+    PitchShiftingParameters,
+)
 from pydalboard.signal.base import SignalInfo
 from pydalboard.signal.oscillators import Oscillator, Waveform
 
+
 def main():
-    try:
-        if len(sys.argv) != 3:
-            raise ValueError("Usage: main.py [-f <file_path> | -w <waveform_name>]")
-
-        # Retrieve arguments
-        flag = sys.argv[1]
-        value = sys.argv[2]
-
-        if flag == '-f':
-            # Use WAV file
-            print(f"File path provided: {value}")
-            play_file(value)
-        elif flag == '-w':
-            # Use Waveform
+    match sys.argv[1:]:
+        case ["-f", file_path]:
+            play_file(file_path)
+        case ["-w", waveform_str]:
             try:
-                waveform = Waveform[value.upper()]
+                waveform = Waveform[waveform_str.upper()]
                 print(f"Waveform selected: {waveform}")
                 play_waveform(waveform)
             except KeyError:
-                raise ValueError(f"Invalid enum value. Allowed values are: {[e.name for e in Waveform]}")
-        else:
-            raise ValueError("Invalid flag. Use -f for file path or -w for waveform.")
-    except Exception as e:
-        print(e)
-        sys.exit(1)
+                print(
+                    f"Invalid enum value. Allowed values are: {[e.name for e in Waveform]}"
+                )
+                exit(1)
+        case _:
+            print("Usage: main.py [-f <file_path> | -w <waveform_name>]")
+            sys.exit(1)
 
 
 def play_file(file_path):
@@ -48,22 +49,21 @@ def play_file(file_path):
 
         # Retrieve WAV data and information
         wav_source = Wav(Path(file_path), loop=False)
-        sample_rate = wav_source.signal_info.sample_rate
-        sample_format = wav_source.signal_info.sample_format
-        channels = 2 if wav_source.signal_info.stereo else 1
+        infos = wav_source.signal_info
 
         # Define sample format
-        if sample_format == 16:
-            pa_format = pyaudio.paInt16
-        elif sample_format == 32:
-            pa_format = pyaudio.paInt32
-        else:
-            raise ValueError("Unsupported sample format")
+        match infos.sample_format:
+            case 16:
+                pa_format = pyaudio.paInt16
+            case 32:
+                pa_format = pyaudio.paInt32
+            case _:
+                raise ValueError("Unsupported sample format")
 
         # Initialize audio player
         player = p.open(
-            rate=sample_rate,
-            channels=channels,
+            rate=infos.sample_rate,
+            channels=2 if infos.stereo else 1,
             output=True,
             frames_per_buffer=1,
             format=pa_format,
@@ -81,7 +81,8 @@ def play_file(file_path):
             try:
                 frame = pipeline.run()
                 if wav_source.signal_info.sample_format in [16, 32]:
-                    # Convert back from float32 to int16/32
+                    # Convert back from float32 to int16/32
+                    # TODO: I think this belongs in the Pipeline class
                     frame = (frame * (2**31 - 1)).astype(np.int32)
                 player.write(frame.tobytes(), 1)
             except KeyboardInterrupt:
@@ -107,14 +108,15 @@ def play_waveform(waveform):
             frames_per_buffer=1,
             format=pyaudio.paInt32,
         )
-        
+
         # Create the pipeline
         pipeline = Pipeline(
             Oscillator(
                 waveform=waveform,
                 frequency=440,
+                phase=0.0,
                 signal_info=SignalInfo(44100, 32, True),
-                cycles=100
+                cycles=100,
             )
         )
         # pipeline.modules.append(Drive(DriveParameters(gain=2.0, clipping=True)))
