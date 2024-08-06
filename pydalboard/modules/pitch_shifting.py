@@ -12,6 +12,7 @@ from pydalboard.modules.base import Module
 @dataclass
 class PitchShiftingParameters:
     pitch_factor: float # Factor by which to shift the pitch
+    warp: bool # Whether to preserve the sample length or not
 
     def __post_init__(self):
         # 0.5: lower pitch by one octave
@@ -61,10 +62,14 @@ class PitchShifting(Module):
         return output
 
     def pitch_shift(self, frame: np.ndarray, pitch_factor: float) -> np.ndarray:
-        # Resample the frame to change the pitch
+        # Resample the frame (chunk of data) to change the pitch
         # Higher pitch implies lower sample rate
         # Lower pitch implies higher sample rate
         resampled_frame = resample(frame, int(len(frame) / pitch_factor))
+        
+        if not self.params.warp:
+            # Sample original length is not preserved
+            return resampled_frame
 
         # If the resampled frame is too short, pad with zeros
         if len(resampled_frame) < len(frame):
