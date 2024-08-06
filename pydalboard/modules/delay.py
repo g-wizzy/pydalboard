@@ -1,4 +1,3 @@
-from typing import ClassVar
 from dataclasses import dataclass
 from collections import deque
 
@@ -38,8 +37,10 @@ class Delay(Module):
         output = input
 
         if len(self.memory) > 0:
-            delayed_sample = self.memory[0] # Oldest sample in the deque
-            output += delayed_sample * self.params.feedback # Mix the input with the delayed one
+            delayed_sample = self.memory[0]  # Oldest sample in the deque
+            output += (
+                delayed_sample * self.params.feedback
+            )  # Mix the input with the delayed one
 
         # Add the sample to the end of the deque (right)
         # Once the memory is full, the oldest sample (left) will be removed

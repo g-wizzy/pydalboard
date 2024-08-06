@@ -1,4 +1,3 @@
-from typing import ClassVar
 from dataclasses import dataclass
 from collections import deque
 
@@ -11,8 +10,8 @@ from pydalboard.modules.base import Module
 
 @dataclass
 class PitchShiftingParameters:
-    pitch_factor: float # Factor by which to shift the pitch
-    warp: bool # Whether to preserve the sample length or not
+    pitch_factor: float  # Factor by which to shift the pitch
+    warp: bool  # Whether to preserve the sample length or not
 
     def __post_init__(self):
         # 0.5: lower pitch by one octave
@@ -23,11 +22,15 @@ class PitchShiftingParameters:
 
 # Basic resampling (not using Phase Vocoder)
 class PitchShifting(Module):
-    def __init__(self, params: PitchShiftingParameters, sample_rate: int, frame_size: int = 2048, hop_size: int = 512):
+    def __init__(
+        self,
+        params: PitchShiftingParameters,
+        frame_size: int = 2048,
+        hop_size: int = 512,
+    ):
         self.params = params
-        self.sample_rate = sample_rate
-        self.frame_size = frame_size # Define the required number of samples before resampling (chunk of data)
-        self.hop_size = hop_size # Define the required number of processed samples before outputting (rate of output)
+        self.frame_size = frame_size  # Define the required number of samples before resampling (chunk of data)
+        self.hop_size = hop_size  # Define the required number of processed samples before outputting (rate of output)
 
         self.input_buffers = [deque(maxlen=self.frame_size) for _ in range(2)]
         self.output_buffers = [deque() for _ in range(2)]
@@ -42,7 +45,7 @@ class PitchShifting(Module):
 
             if len(self.input_buffers[channel]) == self.frame_size:
                 # The input buffer has accumulated enough samples
-                # Apply the pitch shifting algorithm to the frame (chunk)
+                # Apply the pitch shifting algorithm to the frame (chunk)
                 frame = np.array(self.input_buffers[channel])
                 pitched_frame = self.pitch_shift(frame, self.params.pitch_factor)
 
@@ -66,7 +69,7 @@ class PitchShifting(Module):
         # Higher pitch implies lower sample rate
         # Lower pitch implies higher sample rate
         resampled_frame = resample(frame, int(len(frame) / pitch_factor))
-        
+
         if not self.params.warp:
             # Sample original length is not preserved
             return resampled_frame
@@ -74,8 +77,8 @@ class PitchShifting(Module):
         # If the resampled frame is too short, pad with zeros
         if len(resampled_frame) < len(frame):
             padded_frame = np.zeros(len(frame))
-            padded_frame[:len(resampled_frame)] = resampled_frame
+            padded_frame[: len(resampled_frame)] = resampled_frame
             return padded_frame
 
         # If the resampled frame is too long, truncate it
-        return resampled_frame[:len(frame)]
+        return resampled_frame[: len(frame)]
