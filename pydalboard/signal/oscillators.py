@@ -87,8 +87,8 @@ class Oscillator(SignalSource):
                 case Waveform.SQUARE:
                     table[i] = 1 if (i / self.table_size) % 1 < 0.5 else -1
                 case Waveform.SAWTOOTH:
-                    table[i] = 2 / math.pi * math.atan(math.tan(theta))
-        
+                    table[i] = 2 / math.pi * math.atan(math.tan(theta / 2))
+
         # Normalize the table
         table /= max(abs(table.min()), abs(table.max()))
 
