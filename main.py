@@ -6,7 +6,7 @@ import pyaudio
 
 from pydalboard.pipeline import Pipeline
 from pydalboard.signal import Wav
-from pydalboard.modules import Delay, DelayParameters, Drive, DriveParameters, Filter, FilterParameters, PitchShifting, PitchShiftingParameters
+from pydalboard.modules import Delay, DelayParameters, Drive, DriveParameters, Filter, FilterParameters, PitchShifting, PitchShiftingParameters, Saturation, SaturationParameters
 from pydalboard.signal.base import SignalInfo
 from pydalboard.signal.oscillators import Oscillator, Waveform
 
@@ -71,7 +71,8 @@ def play_file(file_path):
 
         # Create the pipeline
         pipeline = Pipeline(wav_source)
-        # pipeline.modules.append(Drive(DriveParameters(gain=2.0, clipping=True)))
+        pipeline.modules.append(Saturation(SaturationParameters(drive=4.0)))
+        # pipeline.modules.append(Drive(DriveParameters(drive=1.0)))
         # pipeline.modules.append(PitchShifting(PitchShiftingParameters(pitch_factor=0.8, warp=False), sample_rate=sample_rate))
         # pipeline.modules.append(Filter(FilterParameters(cutoff=3000, resonance=1.41, filter_type='low', slope=12)))
         # pipeline.modules.append(Delay(DelayParameters(delay=300, feedback=0.3), sample_rate=sample_rate))
@@ -117,7 +118,7 @@ def play_waveform(waveform):
                 cycles=100
             )
         )
-        # pipeline.modules.append(Drive(DriveParameters(gain=2.0, clipping=True)))
+        # pipeline.modules.append(Drive(DriveParameters(drive=2.0)))
         # pipeline.modules.append(PitchShifting(PitchShiftingParameters(pitch_factor=0.8, warp=False), sample_rate=44100))
         # pipeline.modules.append(Filter(FilterParameters(cutoff=3000, resonance=1.41, filter_type='low', slope=12)))
         # pipeline.modules.append(Delay(DelayParameters(delay=300, feedback=0.3), sample_rate=44100))

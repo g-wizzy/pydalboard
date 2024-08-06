@@ -5,28 +5,27 @@ import numpy as np
 
 from pydalboard.signal import SignalInfo
 from pydalboard.modules.base import Module
+from .drive import Drive, DriveParameters
 
 @dataclass
-class DriveParameters:
-    drive: float # Amount of drive to add to the signal
-    clipping: bool = False # Whether to clip the signal or not
+class SaturationParameters(DriveParameters):
 
     def __post_init__(self):
-        self.drive = max(0.01, self.drive) # Negative drive is possible to reduce the signal
+        self.drive = max(0.01, self.drive) # Negative drive is possible to add saturation while reducing gain
 
 
-class Drive(Module):
-    def __init__(self, params: DriveParameters):
+class Saturation(Drive):
+    def __init__(self, params: SaturationParameters):
         self.params = params
 
     def process(self, input: np.ndarray, signal_info: SignalInfo) -> np.ndarray:
         output = input * self.params.drive
 
+        # Apply soft saturation using tanh function
+        output = np.tanh(output)
+
+        # Clip the output to avoid distortion
         if self.params.clipping:
             output = self._clip(output)
 
         return output
-
-    def _clip(self, input: np.ndarray) -> np.ndarray:
-        # Clip the output to reduce distortion
-        return np.clip(input, -1.0, 1.0)
