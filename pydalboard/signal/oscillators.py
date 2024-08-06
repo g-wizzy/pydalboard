@@ -23,31 +23,29 @@ class Oscillator(SignalSource):
         self,
         waveform: Waveform,
         frequency: float,
+        phase: float,
         signal_info: SignalInfo,
-        sample_rate: int = 41400,
         table_size: int = 1024,
-        cycles: int = 0,
+        cycles: int | None = None,
     ):
         self.waveform = waveform
         self.frequency = frequency
         self.info = signal_info
-        self.sample_rate = sample_rate
-        self.table_size = table_size # Audio resolution (number of samples)
-        self.cycles = cycles # 0 cycles means infinite waveform
+        self.table_size = table_size  # Audio resolution (number of samples)
+        self.cycles = cycles
 
         # Current position in the waveform
-        # TODO: add phase parameter to start anywhere
-        self.t = 0
+        self.t = phase % 1.0 * (1 / frequency)
         self.cycles_played = 0
         self.total_samples = 0
 
         # Precompute waveform table
-        self.table = self._compute_waveform_table()
-        self._table_size = len(self.table)
+        self._table = self._compute_waveform_table()
+        self._table_size = len(self._table)
 
         # Plot the waveform and save it to a file if __PLOT_WAVEFORM__ is True
         if self.__PLOT_WAVEFORM__:
-            self._plot_waveform(self.table, self.waveform)
+            self._plot_waveform(self._table, self.waveform)
 
     @property
     def signal_info(self) -> SignalInfo:
@@ -55,18 +53,18 @@ class Oscillator(SignalSource):
 
     def get_signal(self) -> tuple[np.ndarray, SignalInfo]:
         # Stop the sound if the number of cycles is reached
-        if self.cycles > 0 and self.cycles_played >= self.cycles:
-            return (np.array([0, 0], dtype="float32"), self.signal_info)
+        if self.cycles is not None and self.cycles_played >= self.cycles:
+            return (np.zeros(2, dtype="float32"), self.signal_info)
 
         index = int(self.t * self.frequency * self._table_size) % self.table_size
-        value = self.table[index]
+        value = self._table[index]
 
         frame = np.array([value, value], dtype="float32")
-        self.t += 1 / self.sample_rate
+        self.t += 1 / self.signal_info.sample_rate
         self.total_samples += 1
 
         # Check if a cycle has completed
-        if self.total_samples >= self.sample_rate / self.frequency:
+        if self.total_samples >= self.signal_info.sample_rate / self.frequency:
             self.cycles_played += 1
             self.total_samples = 0
 
