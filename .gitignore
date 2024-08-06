@@ -4,5 +4,8 @@ venv
 # Python cache
 __pycache__/
 
+# Project
+_waveforms
+
 # MacOS
 .DS_Store
