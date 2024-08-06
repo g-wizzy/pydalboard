@@ -30,12 +30,14 @@ class Oscillator(SignalSource):
     ):
         self.waveform = waveform
         self.frequency = frequency
+        self.phase = phase
+
         self.info = signal_info
         self.table_size = table_size  # Audio resolution (number of samples)
         self.cycles = cycles
 
         # Current position in the waveform
-        self.t = phase % 1.0 * (1 / frequency)
+        self.t = phase % 1.0
         self.cycles_played = 0
         self.total_samples = 0
 
@@ -75,7 +77,7 @@ class Oscillator(SignalSource):
         theta_step = 2 * math.pi / self.table_size
 
         for i in range(self.table_size):
-            theta = i * theta_step
+            theta = i * theta_step + self.phase * 2 * math.pi
 
             match self.waveform:
                 case Waveform.SINE:
