@@ -63,7 +63,7 @@ def play_file(file_path):
         # Initialize audio player
         player = p.open(
             rate=infos.sample_rate,
-            channels=2 if infos.stereo else 1,
+            channels=infos.channels,
             output=True,
             frames_per_buffer=1,
             format=pa_format,
