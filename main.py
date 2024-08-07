@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import pyaudio
 
+from pydalboard.modules.filter import FilterType
 from pydalboard.pipeline import Pipeline
 from pydalboard.signal import Wav
 from pydalboard.modules import (
@@ -18,6 +19,22 @@ from pydalboard.modules import (
 )
 from pydalboard.signal.base import SignalInfo
 from pydalboard.signal.oscillators import Oscillator, Waveform
+
+# For testing purposes, the modules are instanciated
+# The sample rate of 44_100 is arbitrary
+drive = Drive(DriveParameters(gain=2.0, clipping=True))
+pitch = PitchShifting(
+    PitchShiftingParameters(pitch_factor=0.8, warp=False),
+)
+filter = Filter(
+    FilterParameters(
+        cutoff=3000,
+        resonance=1.14,
+        filter_type=FilterType.LOW_PASS,
+        slope=12,
+    )
+)
+delay = Delay(DelayParameters(delay=300, feedback=0.3), sample_rate=44_100)
 
 
 def main():
@@ -71,10 +88,7 @@ def play_file(file_path):
 
         # Create the pipeline
         pipeline = Pipeline(wav_source)
-        # pipeline.modules.append(Drive(DriveParameters(gain=2.0, clipping=True)))
-        # pipeline.modules.append(PitchShifting(PitchShiftingParameters(pitch_factor=0.8, warp=False), sample_rate=sample_rate))
-        # pipeline.modules.append(Filter(FilterParameters(cutoff=3000, resonance=1.41, filter_type='low', slope=12)))
-        # pipeline.modules.append(Delay(DelayParameters(delay=300, feedback=0.3), sample_rate=sample_rate))
+        pipeline.modules.append(filter)
 
         # Play the audio
         while True:
@@ -119,10 +133,6 @@ def play_waveform(waveform):
                 cycles=100,
             )
         )
-        # pipeline.modules.append(Drive(DriveParameters(gain=2.0, clipping=True)))
-        # pipeline.modules.append(PitchShifting(PitchShiftingParameters(pitch_factor=0.8, warp=False), sample_rate=44100))
-        # pipeline.modules.append(Filter(FilterParameters(cutoff=3000, resonance=1.41, filter_type='low', slope=12)))
-        # pipeline.modules.append(Delay(DelayParameters(delay=300, feedback=0.3), sample_rate=44100))
 
         # Play the audio
         while True:
