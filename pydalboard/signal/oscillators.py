@@ -3,7 +3,7 @@ from pydalboard.signal.base import SignalInfo, SignalSource
 import math
 import matplotlib.pyplot as plt
 import numpy as np
-import os
+from pathlib import Path
 
 from enum import Enum
 
@@ -101,10 +101,11 @@ class Oscillator(SignalSource):
         plt.xlabel("Sample")
         plt.ylabel("Amplitude")
         plt.grid(True)
-        
+
         # Save the plot to a file
-        if not os.path.exists("_waveforms"):
-            os.mkdir("_waveforms")
-        filename = os.path.join("_waveforms", f"{waveform.name.lower()}_waveform.png")
-        plt.savefig(filename)
+        output_directory = Path("_waveforms")
+        output_directory.mkdir(exist_ok=True)
+
+        output_file = output_directory / f"{waveform.name.lower()}_waveform.png"
+        plt.savefig(output_file)
         plt.close()
