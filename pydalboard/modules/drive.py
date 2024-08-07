@@ -1,4 +1,3 @@
-from typing import ClassVar
 from dataclasses import dataclass
 
 import numpy as np
@@ -6,10 +5,14 @@ import numpy as np
 from pydalboard.signal import SignalInfo
 from pydalboard.modules.base import Module
 
+
 @dataclass
 class DriveParameters:
-    gain: float # Amount of drive to add to the signal
-    clipping: bool # Whether to clip the signal or not
+    gain: float
+    "Amount of drive to add to the signal"
+
+    clipping: bool
+    "Whether to clip the signal or not"
 
     def __post_init__(self):
         self.gain = max(1.0, self.gain)

@@ -11,23 +11,26 @@ class Wav(SignalSource):
         sample_rate, data = wavfile.read(file.absolute())
 
         # Determine bit depth and max value for normalization
-        if data.dtype == np.int16:
-            self.sample_format = 16
-            self.max_value = np.iinfo(np.int16).max
-        elif data.dtype == np.int32:
-            self.sample_format = 32
-            self.max_value = np.iinfo(np.int32).max
-        elif data.dtype == np.float32:
-            self.sample_format = 32
-            self.max_value = 1.0
-        elif data.dtype == np.float64:
-            self.sample_format = 64
-            self.max_value = 1.0
-        else:
-            raise ValueError("Unsupported audio format")
+        match data.dtype:
+            case np.int16:
+                sample_format = 16
+                max_value = np.iinfo(np.int16).max
+            case np.int32:
+                sample_format = 32
+                max_value = np.iinfo(np.int32).max
+            case np.float32:
+                sample_format = 32
+                max_value = 1.0
+            case np.float64:
+                sample_format = 64
+                max_value = 1.0
+            case _:
+                raise ValueError("Unsupported audio format")
 
         self.info = SignalInfo(
-            sample_rate=sample_rate, sample_format=self.sample_format, stereo=data.shape[1] == 2
+            sample_rate=sample_rate,
+            sample_format=sample_format,
+            stereo=data.shape[1] == 2,
         )
         self.loop = loop
         self.ended = False
@@ -35,8 +38,8 @@ class Wav(SignalSource):
 
         # Normalize audio data to float32
         # Float32 is better suited to process audio, especially when adding gain to avoid clipping
-        if self.sample_format in [16, 32]:
-            self.data = data.astype(np.float32) / self.max_value
+        if sample_format in [16, 32]:
+            self.data = data.astype(np.float32) / max_value
         else:
             self.data = data
 
