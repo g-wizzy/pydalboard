@@ -10,13 +10,17 @@ from pydalboard.modules.base import Module
 
 @dataclass
 class PitchShiftingParameters:
-    pitch_factor: float  # Factor by which to shift the pitch
-    warp: bool  # Whether to preserve the sample length or not
+    pitch_factor: float
+    """Factor by which to shift the pitchFactor by which to shift the pitch
+
+    0.5 lowers by an octave, and 2.0 pitches it an octave higher.
+
+    Note that the algorithm will introduce artifacts."""
+
+    warp: bool
+    "Whether to preserve the sample length or notWhether to preserve the sample length or not"
 
     def __post_init__(self):
-        # 0.5: lower pitch by one octave
-        # 2.0: raises pitch by one octave
-        # Note that this pitch shifting algorithm will introduce artifacts
         self.pitch_factor = max(0.5, min(self.pitch_factor, 2.0))
 
 

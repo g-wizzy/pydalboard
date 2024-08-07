@@ -16,10 +16,17 @@ class FilterType(Enum):
 
 @dataclass
 class FilterParameters:
-    cutoff: float  # Cutoff frequency in Hz
-    resonance: float  # Resonance (Q) # TODO: define possible values (+6db is ~ √2)
-    filter_type: FilterType  # Type of filter
-    slope: int  # Slope in dB/octave: 12 or 24
+    cutoff: float
+    "Cutoff frequency in Hz"
+
+    resonance: float
+    "Resonance (Q)"  # TODO: define possible values (+6db is ~ √2)
+
+    filter_type: FilterType
+    "Type of filterType of filter"
+
+    slope: int
+    "Slope in dB/octave: 12 or 24Slope in dB/octave: 12 or 24"
 
     def __post_init__(self):
         self.b0, self.b1, self.b2, self.a1, self.a2 = (
