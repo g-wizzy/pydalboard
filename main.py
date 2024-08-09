@@ -11,10 +11,10 @@ from pydalboard.modules import (
     DelayParameters,
     Distortion,
     DistortionParameters,
-    Drive,
-    DriveParameters,
     Filter,
     FilterParameters,
+    Gain,
+    GainParameters,
     Overdrive,
     OverdriveParameters,
     PitchShifting,
@@ -77,9 +77,10 @@ def play_file(file_path):
 
         # Create the pipeline
         pipeline = Pipeline(wav_source)
-        # pipeline.modules.append(Saturation(SaturationParameters(drive=3.0)))
-        # pipeline.modules.append(Overdrive(OverdriveParameters(drive=3.0)))
-        # pipeline.modules.append(Distortion(DistortionParameters(drive=3.0)))
+        # pipeline.modules.append(Gain(GainParameters(gain=0.0)))
+        # pipeline.modules.append(Saturation(SaturationParameters(drive=12.0)))
+        # pipeline.modules.append(Overdrive(OverdriveParameters(drive=12.0)))
+        # pipeline.modules.append(Distortion(DistortionParameters(drive=12.0)))
         # pipeline.modules.append(PitchShifting(PitchShiftingParameters(pitch_factor=0.8, warp=False), sample_rate=sample_rate))
         # pipeline.modules.append(Filter(FilterParameters(cutoff=3000, resonance=1.41, filter_type='low', slope=12)))
         # pipeline.modules.append(Delay(DelayParameters(delay=300, feedback=0.3), sample_rate=sample_rate))

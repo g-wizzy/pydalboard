@@ -5,25 +5,29 @@ import numpy as np
 
 from pydalboard.signal import SignalInfo
 from pydalboard.modules.base import Module
-from .drive import Drive, DriveParameters
+from pydalboard.modules.gain import Gain, GainParameters
 
 @dataclass
-class SaturationParameters(DriveParameters):
+class SaturationParameters():
+    drive: float
+    "Amount of drive to add to the signal (can be negative to reduce incoming signal)"
+
 
     def __post_init__(self):
-        super().__post_init__()
+        # From Ableton Live Saturator plugin
+        self.gain = Gain(GainParameters(gain=self.drive, min=-36.0, max=36.0))
 
 
-class Saturation(Drive):
+class Saturation(Module):
     def __init__(self, params: SaturationParameters):
         self.params = params
 
     def process(self, input: np.ndarray, signal_info: SignalInfo) -> np.ndarray:
-        output = input * self.params.drive
+        # Apply gain before saturation
+        output = self.params.gain.process(input, signal_info)
 
         # Apply soft saturation using tanh function
+        # tanh function returns values between -1.0 and 1.0
         output = np.tanh(output)
-
-        self._clip(output)
 
         return output

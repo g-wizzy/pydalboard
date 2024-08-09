@@ -5,23 +5,27 @@ import numpy as np
 
 from pydalboard.signal import SignalInfo
 from pydalboard.modules.base import Module
-from .drive import Drive, DriveParameters
+from pydalboard.modules.gain import Gain, GainParameters
 
 @dataclass
-class DistortionParameters(DriveParameters):
+class DistortionParameters():
+    drive: float
+    "Amount of drive to add to the signal (can be negative to reduce incoming signal)"
+
 
     def __post_init__(self):
-        super().__post_init__()
+        self.gain = Gain(GainParameters(gain=self.drive, min=-36.0, max=36.0))
 
 
-class Distortion(Drive):
+class Distortion(Module):
     def __init__(self, params: DistortionParameters):
         self.params = params
 
     def process(self, input: np.ndarray, signal_info: SignalInfo) -> np.ndarray:
-        output = input * self.params.drive
+        # Apply gain before saturation
+        output = self.params.gain.process(input, signal_info)
         
         # Apply distortion (severe clipping)
-        output = self._clip(output)
+        output = np.clip(output, -1.0, 1.0)
 
         return output
