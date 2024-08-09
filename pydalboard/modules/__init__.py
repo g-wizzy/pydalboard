@@ -7,7 +7,6 @@ from .pitch_shifting import PitchShifting, PitchShiftingParameters
 __all__ = [
     "Delay", "DelayParameters",
     "Distortion", "DistortionParameters",
-    "Drive", "DriveParameters",
     "Filter", "FilterParameters",
     "Gain", "GainParameters",
     "Overdrive", "OverdriveParameters",
