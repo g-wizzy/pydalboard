@@ -6,7 +6,7 @@ import pyaudio
 
 from pydalboard.pipeline import Pipeline
 from pydalboard.signal import Wav
-from pydalboard.modules import Delay, DelayParameters, Drive, DriveParameters, Filter, FilterParameters, Overdrive, OverdriveParameters, PitchShifting, PitchShiftingParameters, Saturation, SaturationParameters
+from pydalboard.modules import Delay, DelayParameters, Distortion, DistortionParameters, Drive, DriveParameters, Filter, FilterParameters, Overdrive, OverdriveParameters, PitchShifting, PitchShiftingParameters, Saturation, SaturationParameters
 from pydalboard.signal.base import SignalInfo
 from pydalboard.signal.oscillators import Oscillator, Waveform
 
