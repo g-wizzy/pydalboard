@@ -7,14 +7,16 @@ import numpy as np
 @dataclass
 class SignalInfo:
     """
-    Wrapper for the information defining a signal:
-        - Sample rate, expressed in kHz
-        - Sample format, in number of bits
-    """
+    Wrapper for the information defining a signal."""
 
     sample_rate: int
+    "Sample rate, expressed in Hz"
+
     sample_format: int
-    stereo: bool
+    "Sample format, in number of bits"
+
+    channels: int
+    "Audio channels, aka 1 for mono and 2 for stereo"
 
 
 class SignalSource(ABC):

@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import pyaudio
 
+from pydalboard.modules.filter import FilterType
 from pydalboard.pipeline import Pipeline
 from pydalboard.signal import Wav
 from pydalboard.modules import (
@@ -24,6 +25,24 @@ from pydalboard.modules import (
 )
 from pydalboard.signal.base import SignalInfo
 from pydalboard.signal.oscillators import Oscillator, Waveform
+
+# For testing purposes, the modules are instanciated
+# The sample rate of 44_100 is arbitrary
+delay = Delay(DelayParameters(delay=300, feedback=0.3), sample_rate=44_100)
+distortion = Distortion(DistortionParameters(drive=12.0))
+filter = Filter(
+    FilterParameters(
+        cutoff=3000,
+        resonance=1.14,
+        filter_type=FilterType.LOW_PASS,
+        slope=12,
+    )
+)
+overdrive = Overdrive(OverdriveParameters(drive=12.0, threshold=1.0, asymmetry=0.5))
+pitch = PitchShifting(
+    PitchShiftingParameters(pitch_factor=0.8, warp=False),
+)
+saturation = Saturation(SaturationParameters(drive=12.0))
 
 
 def main():
@@ -69,7 +88,7 @@ def play_file(file_path):
         # Initialize audio player
         player = p.open(
             rate=infos.sample_rate,
-            channels=2 if infos.stereo else 1,
+            channels=infos.channels,
             output=True,
             frames_per_buffer=1,
             format=pa_format,
@@ -77,13 +96,7 @@ def play_file(file_path):
 
         # Create the pipeline
         pipeline = Pipeline(wav_source)
-        # pipeline.modules.append(Gain(GainParameters(gain=0.0)))
-        # pipeline.modules.append(Saturation(SaturationParameters(drive=12.0)))
-        # pipeline.modules.append(Overdrive(OverdriveParameters(drive=12.0)))
-        # pipeline.modules.append(Distortion(DistortionParameters(drive=12.0)))
-        # pipeline.modules.append(PitchShifting(PitchShiftingParameters(pitch_factor=0.8, warp=False), sample_rate=sample_rate))
-        # pipeline.modules.append(Filter(FilterParameters(cutoff=3000, resonance=1.41, filter_type='low', slope=12)))
-        # pipeline.modules.append(Delay(DelayParameters(delay=300, feedback=0.3), sample_rate=sample_rate))
+        pipeline.modules.append(filter)
 
         # Play the audio
         while True:
@@ -128,12 +141,6 @@ def play_waveform(waveform):
                 cycles=100,
             )
         )
-        # pipeline.modules.append(Saturation(SaturationParameters(drive=3.0)))
-        # pipeline.modules.append(Overdrive(OverdriveParameters(drive=3.0)))
-        # pipeline.modules.append(Distortion(DistortionParameters(drive=3.0)))
-        # pipeline.modules.append(PitchShifting(PitchShiftingParameters(pitch_factor=0.8, warp=False), sample_rate=sample_rate))
-        # pipeline.modules.append(Filter(FilterParameters(cutoff=3000, resonance=1.41, filter_type='low', slope=12)))
-        # pipeline.modules.append(Delay(DelayParameters(delay=300, feedback=0.3), sample_rate=sample_rate))
 
         # Play the audio
         while True:
