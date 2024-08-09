@@ -30,7 +30,7 @@ class Wav(SignalSource):
         self.info = SignalInfo(
             sample_rate=sample_rate,
             sample_format=sample_format,
-            stereo=data.shape[1] == 2,
+            channels=data.shape[1],
         )
         self.loop = loop
         self.ended = False

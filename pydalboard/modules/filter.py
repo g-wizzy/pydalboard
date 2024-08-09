@@ -79,47 +79,42 @@ class Filter(Module):
     def __init__(self, params: FilterParameters):
         self.params = params
 
-        self.prev_input = [
-            (0.0, 0.0),
-            (0.0, 0.0),
+        self.prev_inputs = [
+            np.zeros(2, "float32"),
+            np.zeros(2, "float32"),
         ]  # [x1[n-1], x1[n-2]], [x2[n-1], x2[n-2]]
-        self.prev_output = [
-            (0.0, 0.0),
-            (0.0, 0.0),
+        self.prev_outputs = [
+            np.zeros(2, "float32"),
+            np.zeros(2, "float32"),
         ]  # [y1[n-1], y1[n-2]], [y2[n-1], y2[n-2]]
 
-    def apply_biquad_filter(self, sample: float, look_back: int) -> float:
+    def apply_biquad_filter(self, sample: np.ndarray) -> np.ndarray:
         """
         Apply Biquad filter to the given sample.
         """
         filtered_sample = (
             self.params.b0 * sample
-            + self.params.b1 * self.prev_input[look_back][0]
-            + self.params.b2 * self.prev_input[look_back][1]
-            - self.params.a1 * self.prev_output[look_back][0]
-            - self.params.a2 * self.prev_output[look_back][1]
+            + self.params.b1 * self.prev_inputs[-1]
+            + self.params.b2 * self.prev_inputs[-2]
+            - self.params.a1 * self.prev_outputs[-1]
+            - self.params.a2 * self.prev_outputs[-2]
         )
         return filtered_sample
 
-    def update_memories(self, sample: tuple[float, float]):
-        """
-        Update the previous inputs and outputs memories.
-        """
-        self.prev_input.pop()
-        self.prev_input.insert(0, sample)
-        self.prev_input.pop()
-        self.prev_input.insert(0, sample)
+    def update_memory(self, input: np.ndarray, output: np.ndarray) -> None:
+        self.prev_inputs.pop(0)
+        self.prev_inputs.append(input)
+        self.prev_outputs.pop(0)
+        self.prev_outputs.append(output)
 
     def process(self, input: np.ndarray, signal_info: SignalInfo) -> np.ndarray:
         # Apply filters based on the slope
-        filtered_left = self.apply_biquad_filter(input[0], 0)
-        filtered_right = self.apply_biquad_filter(input[1], 0)
+        filtered = self.apply_biquad_filter(input)
+        self.update_memory(input, filtered)
 
         if self.params.slope == 24:
             # Apply filters twice if the slope is 24db/octave
-            filtered_left = self.apply_biquad_filter(filtered_left, 1)
-            filtered_right = self.apply_biquad_filter(filtered_right, 1)
+            filtered = self.apply_biquad_filter(filtered)
+            self.update_memory(input, filtered)
 
-        self.update_memories((filtered_left, filtered_right))
-
-        return np.array([filtered_left, filtered_right])
+        return filtered
