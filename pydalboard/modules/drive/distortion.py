@@ -11,7 +11,7 @@ from .drive import Drive, DriveParameters
 class DistortionParameters(DriveParameters):
 
     def __post_init__(self):
-        self.drive = max(0.01, self.drive) # Negative drive is possible to add distortion while reducing gain
+        super().__post_init__()
 
 
 class Distortion(Drive):
@@ -22,10 +22,6 @@ class Distortion(Drive):
         output = input * self.params.drive
         
         # Apply distortion (severe clipping)
-        output = np.clip(output, -1.0, 1.0)
-        
-        # Clip the output to avoid distortion
-        if self.params.clipping:
-            output = self._clip(output)
+        output = self._clip(output)
 
         return output

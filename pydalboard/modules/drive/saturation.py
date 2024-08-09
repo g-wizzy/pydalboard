@@ -11,7 +11,7 @@ from .drive import Drive, DriveParameters
 class SaturationParameters(DriveParameters):
 
     def __post_init__(self):
-        self.drive = max(0.01, self.drive) # Negative drive is possible to add saturation while reducing gain
+        super().__post_init__()
 
 
 class Saturation(Drive):
@@ -24,8 +24,6 @@ class Saturation(Drive):
         # Apply soft saturation using tanh function
         output = np.tanh(output)
 
-        # Clip the output to avoid distortion
-        if self.params.clipping:
-            output = self._clip(output)
+        self._clip(output)
 
         return output

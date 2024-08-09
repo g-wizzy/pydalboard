@@ -1,4 +1,3 @@
-from typing import ClassVar
 from dataclasses import dataclass
 from collections import deque
 
@@ -10,8 +9,11 @@ from pydalboard.modules.base import Module
 
 @dataclass
 class DelayParameters:
-    delay: int  # Delay time in ms
-    feedback: float  # Amount of the delayed signal injected again in the process
+    delay: int
+    "Delay time in ms"
+
+    feedback: float
+    "Amount of the delayed signal injected again in the process"
 
     def __post_init__(self):
         self.delay = max(1, self.delay)
@@ -27,6 +29,7 @@ class Delay(Module):
         self.params = params
         self.sample_rate = sample_rate
         self.memory = deque(maxlen=self.ms_to_samples(params.delay))
+        self.params.delay
 
     def ms_to_samples(self, delay: int) -> int:
         """
@@ -38,8 +41,8 @@ class Delay(Module):
         output = input
 
         if len(self.memory) > 0:
-            delayed_sample = self.memory[0] # Oldest sample in the deque
-            output += delayed_sample * self.params.feedback # Mix the input with the delayed one
+            delayed_sample = self.memory[0]  # Oldest sample in the deque
+            output += delayed_sample * self.params.feedback
 
         # Add the sample to the end of the deque (right)
         # Once the memory is full, the oldest sample (left) will be removed

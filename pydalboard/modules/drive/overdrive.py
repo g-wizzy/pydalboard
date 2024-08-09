@@ -9,11 +9,16 @@ from .drive import Drive, DriveParameters
 
 @dataclass
 class OverdriveParameters(DriveParameters):
-    threshold: float = 1.0 # Clipping threshold
-    asymmetry: float = 0.5 # 0.0 for symmetrical, 1.0 for extreme asymmetry
+    threshold: float = 1.0
+    "Clipping threshold"
+
+
+    asymmetry: float = 0.5
+    "0.0 for symmetrical, 1.0 for extreme asymmetry"
+
 
     def __post_init__(self):
-        self.drive = max(0.01, self.drive) # Negative drive is possible to add overdrive while reducing gain
+        super().__post_init__()
         self.threshold = max(0.01, self.threshold)
         self.asymmetry = np.clip(self.asymmetry, 0.0, 1.0)
 
@@ -31,8 +36,6 @@ class Overdrive(Drive):
         # Negative side clipping with asymmetry
         output[output < -self.params.threshold] = -self.params.threshold * (1 - self.params.asymmetry)
         
-        # Clip the output to avoid distortion
-        if self.params.clipping:
-            output = self._clip(output)
+        self._clip(output)
 
         return output
