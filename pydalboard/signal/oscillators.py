@@ -36,68 +36,72 @@ class Oscillator(SignalSource):
         self.cycles = cycles
 
         # Current position in the waveform
-        self.t = phase % 1.0
+        self.t = 0
         self.cycles_played = 0
-        self.total_samples = 0
 
         # Precompute waveform table
         self._table = self._compute_waveform_table()
-        self._table_size = len(self._table)
 
         # Plot the waveform and save it to a file if __PLOT_WAVEFORM__ is True
         if self.__PLOT_WAVEFORM__:
-            self._plot_waveform(self._table, self.waveform)
+            self._plot_waveform(self._table)
 
     @property
     def signal_info(self) -> SignalInfo:
         return self.info
 
-    def get_signal(self) -> tuple[np.ndarray, SignalInfo]:
+    def get_signal(self) -> np.ndarray:
         # Stop the sound if the number of cycles is reached
         if self.cycles is not None and self.cycles_played >= self.cycles:
-            return (np.zeros(2, dtype="float32"), self.signal_info)
+            return np.zeros((self.info.buffer_size, 2), dtype=np.float32)
 
-        index = int(self.t * self.frequency * self._table_size) % self.table_size
-        value = self._table[index]
+        delta_t = self.info.buffer_size / self.info.sample_rate * self.frequency
+        buffer = self._compute_buffer(delta_t)
+        self.t += delta_t
 
-        frame = np.array([value, value], dtype="float32")
-        self.t += 1 / self.signal_info.sample_rate
-        self.total_samples += 1
+        if self.t >= 1:
+            cycles, self.t = divmod(self.t, 1)
+            self.cycles_played += cycles
 
-        # Check if a cycle has completed
-        if self.total_samples >= self.signal_info.sample_rate / self.frequency:
-            self.cycles_played += 1
-            self.total_samples = 0
+        return buffer
 
-        return (frame, self.signal_info)
+    def _compute_buffer(self, delta_t: float) -> np.ndarray:
+        indices = [
+            int(t * self.table_size) % self.table_size
+            for t in np.linspace(
+                self.t + self.phase,
+                self.t + self.phase + delta_t,
+                num=self.info.buffer_size,
+            )
+        ]
+        values = self._table.take(indices)
+        buffer = np.dstack((values, values))[0]
+
+        return buffer
 
     def _compute_waveform_table(self) -> np.ndarray:
-        table = np.zeros(self.table_size, dtype="float32")
-        theta_step = 2 * math.pi / self.table_size
+        table = np.linspace(0, 2 * math.pi, num=self.table_size)
 
-        for i in range(self.table_size):
-            theta = i * theta_step + self.phase * 2 * math.pi
-
-            match self.waveform:
-                case Waveform.SINE:
-                    table[i] = math.sin(theta)
-                case Waveform.TRIANGLE:
-                    table[i] = 2 / math.pi * math.asin(math.sin(theta))
-                case Waveform.SQUARE:
-                    table[i] = 1 if (i / self.table_size) % 1 < 0.5 else -1
-                case Waveform.SAWTOOTH:
-                    table[i] = 2 / math.pi * math.atan(math.tan(theta / 2))
-
-        # Normalize the table
-        table /= max(abs(table.min()), abs(table.max()))
+        match self.waveform:
+            case Waveform.SINE:
+                table = np.sin(table)
+            case Waveform.TRIANGLE:
+                table = 2 / math.pi * np.asin(np.sin(table))
+            case Waveform.SQUARE:
+                table = np.array(
+                    list(1 if t < math.pi else -1 for t in table),
+                    dtype=np.float32,
+                )
+            case Waveform.SAWTOOTH:
+                table = 2 / math.pi * np.atan(np.tan(table / 2))
 
         return table
 
-    def _plot_waveform(self, data: np.ndarray, waveform: Waveform):
+    def _plot_waveform(self, data):
         # Plot the waveform
         plt.figure(figsize=(10, 4))
         plt.plot(data)
-        plt.title(f"{waveform.name} Waveform")
+        plt.title(f"{self.waveform.name} Waveform")
         plt.xlabel("Sample")
         plt.ylabel("Amplitude")
         plt.grid(True)
@@ -106,6 +110,6 @@ class Oscillator(SignalSource):
         output_directory = Path("_waveforms")
         output_directory.mkdir(exist_ok=True)
 
-        output_file = output_directory / f"{waveform.name.lower()}_waveform.png"
+        output_file = output_directory / f"{self.waveform.name.lower()}_waveform.png"
         plt.savefig(output_file)
         plt.close()
