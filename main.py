@@ -46,25 +46,62 @@ saturation = Saturation(SaturationParameters(drive=12.0))
 
 
 def main():
-    match sys.argv[1:]:
-        case ["-f", file_path]:
-            play_file(file_path)
-        case ["-w", waveform_str]:
-            try:
-                waveform = Waveform[waveform_str.upper()]
-                print(f"Waveform selected: {waveform}")
-                play_waveform(waveform)
-            except KeyError:
-                print(
-                    f"Invalid enum value. Allowed values are: {[e.name for e in Waveform]}"
-                )
-                exit(1)
-        case _:
-            print("Usage: main.py [-f <file_path> | -w <waveform_name>]")
-            sys.exit(1)
+    usage = "Usage: main.py [-b <buffer_size>] [-f <file_path> | -w <waveform_name>]"
+    function = None
+    kwargs = {}
+
+    args = sys.argv[1:]
+    while args:
+        match args:
+            case ["-b", buffer_size_str, *other_args]:
+                try:
+                    buffer_size = int(buffer_size_str)
+                except ValueError:
+                    print(
+                        f"Invalid buffer_size. Expected integer, got {buffer_size_str}"
+                    )
+                    exit(1)
+                if buffer_size not in {32, 64, 128, 256, 512, 1024, 2048}:
+                    print(
+                        f"Invalid buffer size. Expected value in {{32, 64, 128, 256, 512, 1024, 2048}}, got {buffer_size}"
+                    )
+                    exit(1)
+                kwargs["buffer_size"] = buffer_size
+
+                args = other_args
+
+            case ["-f", file_path, *other_args]:
+                function = play_file
+                kwargs["file_path"] = file_path
+
+                args = other_args
+
+            case ["-w", waveform_str, *other_args]:
+                try:
+                    waveform = Waveform[waveform_str.upper()]
+                except KeyError:
+                    print(
+                        f"Invalid enum value. Allowed values are: {[e.name for e in Waveform]}"
+                    )
+                    exit(1)
+
+                function = play_waveform
+                kwargs["waveform"] = waveform
+
+                args = other_args
+
+            case _:
+                print(f"Unexpected argument: {args[0]}. {usage}")
+                sys.exit(1)
+
+    if function is None:
+        print(f"Missing file or waveform. {usage}")
+        exit(1)
+
+    function(**kwargs)
 
 
-def play_file(file_path):
+def play_file(*, file_path: str, buffer_size: int = 64):
     """
     Play the audio file.
     """
@@ -73,11 +110,10 @@ def play_file(file_path):
         p = pyaudio.PyAudio()
 
         # Retrieve WAV data and information
-        wav_source = Wav(Path(file_path), loop=False)
-        infos = wav_source.signal_info
+        wav_source = Wav(Path(file_path), buffer_size, loop=False)
 
         # Define sample format
-        match infos.sample_format:
+        match wav_source.signal_info.sample_format:
             case 16:
                 pa_format = pyaudio.paInt16
             case 32:
@@ -87,10 +123,10 @@ def play_file(file_path):
 
         # Initialize audio player
         player = p.open(
-            rate=infos.sample_rate,
-            channels=infos.channels,
+            rate=wav_source.signal_info.sample_rate,
+            channels=wav_source.signal_info.channels,
             output=True,
-            frames_per_buffer=1,
+            frames_per_buffer=buffer_size,
             format=pa_format,
         )
 
@@ -107,7 +143,7 @@ def play_file(file_path):
         while True:
             try:
                 frame = pipeline.run()
-                player.write(frame.tobytes(), 1)
+                player.write(frame.tobytes(), wav_source.signal_info.buffer_size)
             except KeyboardInterrupt:
                 break
     except Exception as e:
@@ -115,7 +151,7 @@ def play_file(file_path):
         sys.exit(2)
 
 
-def play_waveform(waveform):
+def play_waveform(*, waveform: Waveform, buffer_size: int = 64):
     """
     Play the waveform.
     """
@@ -128,7 +164,7 @@ def play_waveform(waveform):
             rate=44100,
             channels=2,
             output=True,
-            frames_per_buffer=1,
+            frames_per_buffer=buffer_size,
             format=pyaudio.paInt32,
         )
 
@@ -138,7 +174,7 @@ def play_waveform(waveform):
                 waveform=waveform,
                 frequency=440,
                 phase=0.0,
-                signal_info=SignalInfo(44100, 32, True),
+                signal_info=SignalInfo(44100, 32, True, buffer_size),
                 cycles=100,
             )
         )
