@@ -18,6 +18,9 @@ class SignalInfo:
     channels: int
     "Audio channels, aka 1 for mono and 2 for stereo"
 
+    buffer_size: int
+    "Number of frames in the buffer"
+
     def convert_to_format(self, frame: np.ndarray) -> np.ndarray:
         match self.sample_format:
             case 16:

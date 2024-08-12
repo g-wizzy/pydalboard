@@ -7,7 +7,7 @@ from pydalboard.signal.base import SignalSource, SignalInfo
 
 
 class Wav(SignalSource):
-    def __init__(self, file: Path, loop: bool) -> None:
+    def __init__(self, file: Path, buffer_size: int, loop: bool) -> None:
         sample_rate, data = wavfile.read(file.absolute())
 
         # Determine bit depth and max value for normalization
@@ -31,6 +31,7 @@ class Wav(SignalSource):
             sample_rate=sample_rate,
             sample_format=sample_format,
             channels=data.shape[1],
+            buffer_size=buffer_size,
         )
         self.loop = loop
         self.ended = False
