@@ -16,6 +16,15 @@ class SignalInfo:
     sample_format: int
     stereo: bool
 
+    def convert_to_format(self, frame: np.ndarray) -> np.ndarray:
+        match self.sample_format:
+            case 16:
+                return (frame * 32767).astype(np.int16)
+            case 32:
+                return (frame * 2147483647).astype(np.int32)
+            case _:
+                return np.zeros(2 if self.stereo else 1, np.float32)
+
 
 class SignalSource(ABC):
     @property
