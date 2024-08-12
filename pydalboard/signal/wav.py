@@ -48,18 +48,26 @@ class Wav(SignalSource):
     def signal_info(self) -> SignalInfo:
         return self.info
 
-    def get_signal(self) -> tuple[np.ndarray, SignalInfo]:
+    def get_signal(self) -> np.ndarray:
         if self.ended:
-            return (np.zeros(2, dtype=np.float32), self.signal_info)
+            return np.zeros((self.info.buffer_size, 2), dtype=np.float32)
 
-        state = self.data[self.read_index]
-        self.read_index += 1
-        if self.read_index >= len(self.data) and not self.loop:
-            self.ended = True
-        else:
-            self.read_index %= len(self.data)
+        buffer = self.data[
+            self.read_index : self.read_index + self.info.buffer_size
+        ]  # Numpy accepts out of range values, but does not pad the output with zeros of nans
+        self.read_index += self.info.buffer_size
 
-        return (
-            state,
-            self.signal_info,
-        )
+        if self.read_index >= len(self.data):
+            self.read_index = self.read_index - len(self.data)
+            if self.loop:
+                buffer = np.concatenate([buffer, self.data[0 : self.read_index]])
+            else:
+                buffer = np.pad(
+                    buffer,
+                    ((0, self.read_index), (0, 0)),
+                    "constant",
+                    constant_values=0,
+                )
+                self.ended = True
+
+        return buffer

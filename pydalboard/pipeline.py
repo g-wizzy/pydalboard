@@ -14,7 +14,8 @@ class Pipeline:
         return self._modules
 
     def run(self) -> np.ndarray:
-        frame, signal_info = self.source.get_signal()
+        frame = self.source.get_signal()
+        signal_info = self.source.signal_info
         for module in self.modules:
             frame = module.process(frame, signal_info)
 
