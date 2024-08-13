@@ -28,21 +28,17 @@ from pydalboard.signal.oscillators import Oscillator, Waveform
 
 # For testing purposes, the modules are instanciated
 # The sample rate of 44_100 is arbitrary
-distortion = Distortion(DistortionParameters(drive=12.0))
-delay = Delay(DelayParameters(delay=300, feedback=0.3), sample_rate=44_100)
-filter = Filter(
-    FilterParameters(
-        cutoff=3000,
-        resonance=1.14,
-        filter_type=FilterType.LOW_PASS,
-        slope=12,
-    )
+distortion = DistortionParameters(drive=12.0)
+delay = DelayParameters(delay=300, feedback=0.4)
+filter = FilterParameters(
+    cutoff=3000,
+    resonance=1.14,
+    filter_type=FilterType.LOW_PASS,
+    slope=12,
 )
-overdrive = Overdrive(OverdriveParameters(drive=12.0, threshold=1.0, asymmetry=0.5))
-pitch = PitchShifting(
-    PitchShiftingParameters(pitch_factor=0.8, warp=False),
-)
-saturation = Saturation(SaturationParameters(drive=12.0))
+overdrive = OverdriveParameters(drive=12.0, threshold=1.0, asymmetry=0.5)
+pitch = (PitchShiftingParameters(pitch_factor=0.8, warp=False),)
+saturation = SaturationParameters(drive=12.0)
 
 
 def main():
@@ -105,49 +101,45 @@ def play_file(*, file_path: str, buffer_size: int = 64):
     """
     Play the audio file.
     """
-    try:
-        # Initialize PyAudio
-        p = pyaudio.PyAudio()
+    # Initialize PyAudio
+    p = pyaudio.PyAudio()
 
-        # Retrieve WAV data and information
-        wav_source = Wav(Path(file_path), buffer_size, loop=False)
+    # Retrieve WAV data and information
+    wav_source = Wav(Path(file_path), buffer_size, loop=False)
 
-        # Define sample format
-        match wav_source.signal_info.sample_format:
-            case 16:
-                pa_format = pyaudio.paInt16
-            case 32:
-                pa_format = pyaudio.paInt32
-            case _:
-                raise ValueError("Unsupported sample format")
+    # Define sample format
+    match wav_source.signal_info.sample_format:
+        case 16:
+            pa_format = pyaudio.paInt16
+        case 32:
+            pa_format = pyaudio.paInt32
+        case _:
+            raise ValueError("Unsupported sample format")
 
-        # Initialize audio player
-        player = p.open(
-            rate=wav_source.signal_info.sample_rate,
-            channels=wav_source.signal_info.channels,
-            output=True,
-            format=pa_format,
-        )
+    # Initialize audio player
+    player = p.open(
+        rate=wav_source.signal_info.sample_rate,
+        channels=wav_source.signal_info.channels,
+        output=True,
+        format=pa_format,
+    )
 
-        # Create the pipeline
-        pipeline = Pipeline(wav_source)
-        # pipeline.modules.append(pitch)
-        # pipeline.modules.append(saturation)
-        # pipeline.modules.append(overdrive)
-        # pipeline.modules.append(distortion)
-        # pipeline.modules.append(filter)
-        # pipeline.modules.append(delay)
+    # Create the pipeline
+    pipeline = Pipeline(wav_source)
+    # pipeline.modules.append(pitch)
+    # pipeline.modules.append(saturation)
+    # pipeline.modules.append(overdrive)
+    # pipeline.modules.append(distortion)
+    # pipeline.modules.append(filter)
+    pipeline.add_module(delay)
 
-        # Play the audio
-        while True:
-            try:
-                buffer = pipeline.run()
-                player.write(buffer.tobytes())
-            except KeyboardInterrupt:
-                break
-    except Exception as e:
-        print(e)
-        sys.exit(2)
+    # Play the audio
+    while True:
+        try:
+            buffer = pipeline.run()
+            player.write(buffer.tobytes())
+        except KeyboardInterrupt:
+            break
 
 
 def play_waveform(*, waveform: Waveform, buffer_size: int = 64):
