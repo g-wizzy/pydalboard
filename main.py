@@ -126,7 +126,6 @@ def play_file(*, file_path: str, buffer_size: int = 64):
             rate=wav_source.signal_info.sample_rate,
             channels=wav_source.signal_info.channels,
             output=True,
-            frames_per_buffer=buffer_size,
             format=pa_format,
         )
 
@@ -142,8 +141,8 @@ def play_file(*, file_path: str, buffer_size: int = 64):
         # Play the audio
         while True:
             try:
-                frame = pipeline.run()
-                player.write(frame.tobytes(), wav_source.signal_info.buffer_size)
+                buffer = pipeline.run()
+                player.write(buffer.tobytes())
             except KeyboardInterrupt:
                 break
     except Exception as e:
@@ -164,7 +163,6 @@ def play_waveform(*, waveform: Waveform, buffer_size: int = 64):
             rate=44100,
             channels=2,
             output=True,
-            frames_per_buffer=buffer_size,
             format=pyaudio.paInt32,
         )
 
@@ -182,8 +180,8 @@ def play_waveform(*, waveform: Waveform, buffer_size: int = 64):
         # Play the audio
         while True:
             try:
-                frame = pipeline.run()
-                player.write(frame.tobytes(), 1)
+                buffer = pipeline.run()
+                player.write(buffer.tobytes())
             except KeyboardInterrupt:
                 break
     except Exception as e:
