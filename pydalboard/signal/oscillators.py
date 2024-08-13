@@ -75,7 +75,7 @@ class Oscillator(SignalSource):
             )
         ]
         values = self._table.take(indices)
-        buffer = np.dstack((values, values))[0]
+        buffer = np.dstack((values, values))[0] if self.info.channels == 2 else values
 
         return buffer
 
