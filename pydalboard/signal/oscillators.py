@@ -88,10 +88,7 @@ class Oscillator(SignalSource):
             case Waveform.TRIANGLE:
                 table = 2 / math.pi * np.asin(np.sin(table))
             case Waveform.SQUARE:
-                table = np.array(
-                    list(1 if t < math.pi else -1 for t in table),
-                    dtype=np.float32,
-                )
+                table = -np.sign(table - math.pi)
             case Waveform.SAWTOOTH:
                 table = 2 / math.pi * np.atan(np.tan(table / 2))
 
