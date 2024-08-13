@@ -1,4 +1,3 @@
-from typing import ClassVar
 from dataclasses import dataclass
 
 import numpy as np
@@ -14,16 +13,17 @@ class DistortionParameters():
 
 
     def __post_init__(self):
-        self.gain = Gain(GainParameters(gain=self.drive, min=-36.0, max=36.0))
+        self.drive = min(max(-36.0, self.drive), 36.0)
 
 
 class Distortion(Module):
     def __init__(self, params: DistortionParameters):
         self.params = params
+        self.gain = Gain(GainParameters(gain=self.params.drive, min=-36.0, max=36.0))
 
     def process(self, input: np.ndarray, signal_info: SignalInfo) -> np.ndarray:
         # Apply gain before saturation
-        output = self.params.gain.process(input, signal_info)
+        output = self.gain.process(input, signal_info)
         
         # Apply distortion (severe clipping)
         output = np.clip(output, -1.0, 1.0)

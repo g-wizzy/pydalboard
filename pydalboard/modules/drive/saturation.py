@@ -1,4 +1,3 @@
-from typing import ClassVar
 from dataclasses import dataclass
 
 import numpy as np
@@ -15,16 +14,17 @@ class SaturationParameters():
 
     def __post_init__(self):
         # From Ableton Live Saturator plugin
-        self.gain = Gain(GainParameters(gain=self.drive, min=-36.0, max=36.0))
+        self.drive = min(max(-36.0, self.drive), 36.0)
 
 
 class Saturation(Module):
     def __init__(self, params: SaturationParameters):
         self.params = params
+        self.gain = Gain(GainParameters(gain=self.params.drive, min=-36.0, max=36.0))
 
     def process(self, input: np.ndarray, signal_info: SignalInfo) -> np.ndarray:
         # Apply gain before saturation
-        output = self.params.gain.process(input, signal_info)
+        output = self.gain.process(input, signal_info)
 
         # Apply soft saturation using tanh function
         # tanh function returns values between -1.0 and 1.0

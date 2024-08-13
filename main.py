@@ -28,8 +28,8 @@ from pydalboard.signal.oscillators import Oscillator, Waveform
 
 # For testing purposes, the modules are instanciated
 # The sample rate of 44_100 is arbitrary
-delay = Delay(DelayParameters(delay=300, feedback=0.3), sample_rate=44_100)
 distortion = Distortion(DistortionParameters(drive=12.0))
+delay = Delay(DelayParameters(delay=300, feedback=0.3), sample_rate=44_100)
 filter = Filter(
     FilterParameters(
         cutoff=3000,
@@ -96,7 +96,12 @@ def play_file(file_path):
 
         # Create the pipeline
         pipeline = Pipeline(wav_source)
-        pipeline.modules.append(filter)
+        # pipeline.modules.append(pitch)
+        # pipeline.modules.append(saturation)
+        # pipeline.modules.append(overdrive)
+        # pipeline.modules.append(distortion)
+        # pipeline.modules.append(filter)
+        # pipeline.modules.append(delay)
 
         # Play the audio
         while True:
