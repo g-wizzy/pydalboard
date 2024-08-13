@@ -107,10 +107,6 @@ def play_file(file_path):
         while True:
             try:
                 frame = pipeline.run()
-                if wav_source.signal_info.sample_format in [16, 32]:
-                    # Convert back from float32 to int16/32
-                    # TODO: I think this belongs in the Pipeline class
-                    frame = (frame * (2**31 - 1)).astype(np.int32)
                 player.write(frame.tobytes(), 1)
             except KeyboardInterrupt:
                 break
