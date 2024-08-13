@@ -10,22 +10,26 @@ from pydalboard.signal import Wav
 from pydalboard.modules import (
     Delay,
     DelayParameters,
-    Drive,
-    DriveParameters,
+    Distortion,
+    DistortionParameters,
     Filter,
     FilterParameters,
+    Gain,
+    GainParameters,
+    Overdrive,
+    OverdriveParameters,
     PitchShifting,
     PitchShiftingParameters,
+    Saturation,
+    SaturationParameters,
 )
 from pydalboard.signal.base import SignalInfo
 from pydalboard.signal.oscillators import Oscillator, Waveform
 
 # For testing purposes, the modules are instanciated
 # The sample rate of 44_100 is arbitrary
-drive = Drive(DriveParameters(gain=2.0, clipping=True))
-pitch = PitchShifting(
-    PitchShiftingParameters(pitch_factor=0.8, warp=False),
-)
+distortion = Distortion(DistortionParameters(drive=12.0))
+delay = Delay(DelayParameters(delay=300, feedback=0.3), sample_rate=44_100)
 filter = Filter(
     FilterParameters(
         cutoff=3000,
@@ -34,7 +38,11 @@ filter = Filter(
         slope=12,
     )
 )
-delay = Delay(DelayParameters(delay=300, feedback=0.3), sample_rate=44_100)
+overdrive = Overdrive(OverdriveParameters(drive=12.0, threshold=1.0, asymmetry=0.5))
+pitch = PitchShifting(
+    PitchShiftingParameters(pitch_factor=0.8, warp=False),
+)
+saturation = Saturation(SaturationParameters(drive=12.0))
 
 
 def main():
@@ -88,7 +96,12 @@ def play_file(file_path):
 
         # Create the pipeline
         pipeline = Pipeline(wav_source)
-        pipeline.modules.append(filter)
+        # pipeline.modules.append(pitch)
+        # pipeline.modules.append(saturation)
+        # pipeline.modules.append(overdrive)
+        # pipeline.modules.append(distortion)
+        # pipeline.modules.append(filter)
+        # pipeline.modules.append(delay)
 
         # Play the audio
         while True:
