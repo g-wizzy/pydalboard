@@ -30,6 +30,9 @@ class SignalInfo:
             case _:
                 return np.zeros(self.channels, np.float32)
 
+    def ms_to_samples(self, duration_ms: float) -> int:
+        return int(duration_ms * 1e-3 * self.sample_rate)
+
 
 class SignalSource(ABC):
     @property
