@@ -1,120 +1,156 @@
 from dataclasses import dataclass
 
 import numpy as np
+from numba import jit
 
 from pydalboard.signal import SignalInfo
-from pydalboard.modules.base import Module
+from pydalboard.modules.base import Module, ModuleParams
 
 from enum import Enum
 
 
 class FilterType(Enum):
     LOW_PASS = 1
-    HIGH_PASS = 2
-    BAND_PASS = 3
+    LOW_SHELF_PASS = 2
+    HIGH_PASS = 3
+    HIGH_SHELF_PASS = 4
+    BAND_PASS = 5
 
 
 @dataclass
-class FilterParameters:
+class FilterParameters(ModuleParams):
     cutoff: float
     "Cutoff frequency in Hz"
+
+    gain_db: float
+    "Gain in dB. Only applied for shelving filters"
 
     resonance: float
     "Resonance (Q)"  # TODO: define possible values (+6db is ~ √2)
 
     filter_type: FilterType
-    "Type of filterType of filter"
+    "Type of filter"
 
     slope: int
-    "Slope in dB/octave: 12 or 24Slope in dB/octave: 12 or 24"
+    "Slope in dB/octave: choice among 6dB, 12dB, 18dB and 24dB"
 
-    def __post_init__(self):
-        self.b0, self.b1, self.b2, self.a1, self.a2 = (
-            self.calculate_biquad_coefficients()
-        )
-
-    def calculate_biquad_coefficients(self) -> tuple:
-        """
-        Digital Biquad filter (2nd order filter)
-        """
+    def compute_coefficients(
+        self, signal_info: SignalInfo
+    ) -> tuple[np.ndarray, np.ndarray]:
         Q = max(1.0, self.resonance)
-        omega = 2 * np.pi * self.cutoff / 44100  # TODO: get sample rate for audio
-        alpha = np.sin(omega) / (2 * Q)
+        A = 10 ** (self.gain_db / 40)
+        S = self.slope / 24
+
+        omega = 2 * np.pi * self.cutoff / signal_info.sample_rate
         cos_omega = np.cos(omega)
+        sin_omega = np.sin(omega)
+
+        alpha = sin_omega / (2 * Q)
+        beta = np.sqrt(A) * np.sqrt((A + 1 / A) * (1 / S - 1) + 2)
+
+        a = np.zeros(3, np.float32)
+        b = np.zeros(3, np.float32)
 
         match self.filter_type:
             case FilterType.LOW_PASS:
-                b0 = (1 - cos_omega) / 2
-                b1 = 1 - cos_omega
-                b2 = (1 - cos_omega) / 2
-                a0 = 1 + alpha
-                a1 = -2 * cos_omega
-                a2 = 1 - alpha
+                b[0] = (1 - cos_omega) / 2
+                b[1] = 1 - cos_omega
+                b[2] = (1 - cos_omega) / 2
+                a[0] = 1 + alpha
+                a[1] = -2 * cos_omega
+                a[2] = 1 - alpha
+            case FilterType.LOW_SHELF_PASS:
+                b[0] = A * ((A + 1) + (A - 1) * cos_omega + beta * sin_omega)
+                b[1] = -2 * A * ((A - 1) + (A + 1) * cos_omega)
+                b[2] = A * ((A + 1) + (A - 1) * cos_omega - beta * sin_omega)
+                a[0] = (A + 1) - (A - 1) * cos_omega + beta * sin_omega
+                a[1] = 2 * ((A - 1) - (A + 1) * cos_omega)
+                a[2] = (A + 1) - (A - 1) * cos_omega - beta * sin_omega
             case FilterType.HIGH_PASS:
-                b0 = (1 + cos_omega) / 2
-                b1 = -(1 + cos_omega)
-                b2 = (1 + cos_omega) / 2
-                a0 = 1 + alpha
-                a1 = -2 * cos_omega
-                a2 = 1 - alpha
+                b[0] = (1 + cos_omega) / 2
+                b[1] = -(1 + cos_omega)
+                b[2] = (1 + cos_omega) / 2
+                a[0] = 1 + alpha
+                a[1] = -2 * cos_omega
+                a[2] = 1 - alpha
+            case FilterType.HIGH_SHELF_PASS:
+                b[0] = A * ((A + 1) - (A - 1) * cos_omega + beta * sin_omega)
+                b[1] = 2 * A * ((A - 1) - (A + 1) * cos_omega)
+                b[2] = A * ((A + 1) - (A - 1) * cos_omega - beta * sin_omega)
+                a[0] = (A + 1) + (A - 1) * cos_omega + beta * sin_omega
+                a[1] = -2 * ((A - 1) + (A + 1) * cos_omega)
+                a[2] = (A + 1) + (A - 1) * cos_omega - beta * sin_omega
             case FilterType.BAND_PASS:
-                b0 = alpha
-                b1 = 0
-                b2 = -alpha
-                a0 = 1 + alpha
-                a1 = -2 * cos_omega
-                a2 = 1 - alpha
+                b[0] = alpha
+                b[1] = 0
+                b[2] = -alpha
+                a[0] = 1 + alpha
+                a[1] = -2 * cos_omega
+                a[2] = 1 - alpha
 
         # Normalize coefficients
-        b0 /= a0
-        b1 /= a0
-        b2 /= a0
-        a1 /= a0
-        a2 /= a0
+        b /= a[0]
+        a /= a[0]
 
-        return b0, b1, b2, a1, a2
+        return a, b
+
+
+@jit
+def apply_biquad(
+    inputs: np.ndarray,
+    outputs: np.ndarray,
+    a: np.ndarray,
+    b: np.ndarray,
+    count: int,
+) -> None:
+    for i in range(2, 2 + count):
+        outputs[i] = (
+            b[0] * inputs[i]
+            + b[1] * inputs[i - 1]
+            + b[2] * inputs[i - 2]
+            - a[1] * outputs[i - 1]
+            - a[2] * outputs[i - 2]
+        )
 
 
 class Filter(Module):
-    def __init__(self, params: FilterParameters):
+    def __init__(self, signal_info: SignalInfo, params: FilterParameters):
+        super().__init__(signal_info)
         self.params = params
+        self.a, self.b = self.params.compute_coefficients(self.signal_info)
 
-        self.prev_inputs = [
-            np.zeros(2, "float32"),
-            np.zeros(2, "float32"),
-        ]  # [x1[n-1], x1[n-2]], [x2[n-1], x2[n-2]]
-        self.prev_outputs = [
-            np.zeros(2, "float32"),
-            np.zeros(2, "float32"),
-        ]  # [y1[n-1], y1[n-2]], [y2[n-1], y2[n-2]]
+        if self.signal_info.channels == 2:
+            self.prev_inputs = np.array(
+                [
+                    np.zeros(2, "float32"),
+                    np.zeros(2, "float32"),
+                ]
+            )
+            self.prev_outputs = np.array(
+                [
+                    np.zeros(2, "float32"),
+                    np.zeros(2, "float32"),
+                ]
+            )
+        else:
+            self.prev_inputs = np.array([0, 0])
+            self.prev_outputs = np.array([0, 0])
 
-    def apply_biquad_filter(self, sample: np.ndarray) -> np.ndarray:
-        """
-        Apply Biquad filter to the given sample.
-        """
-        filtered_sample = (
-            self.params.b0 * sample
-            + self.params.b1 * self.prev_inputs[-1]
-            + self.params.b2 * self.prev_inputs[-2]
-            - self.params.a1 * self.prev_outputs[-1]
-            - self.params.a2 * self.prev_outputs[-2]
+    def process(self, input: np.ndarray) -> np.ndarray:
+        outputs = np.concatenate([self.prev_outputs, np.zeros(input.shape, np.float32)])
+        inputs = np.concatenate([self.prev_inputs, input])
+
+        apply_biquad(
+            inputs,
+            outputs,
+            self.a,
+            self.b,
+            self.signal_info.buffer_size,
         )
-        return filtered_sample
 
-    def update_memory(self, input: np.ndarray, output: np.ndarray) -> None:
-        self.prev_inputs.pop(0)
-        self.prev_inputs.append(input)
-        self.prev_outputs.pop(0)
-        self.prev_outputs.append(output)
+        self.prev_inputs = inputs[-2:]
+        self.prev_outputs = outputs[-2:]
 
-    def process(self, input: np.ndarray, signal_info: SignalInfo) -> np.ndarray:
-        # Apply filters based on the slope
-        filtered = self.apply_biquad_filter(input)
-        self.update_memory(input, filtered)
+        outputs = outputs.clip(-1, 1)
 
-        if self.params.slope == 24:
-            # Apply filters twice if the slope is 24db/octave
-            filtered = self.apply_biquad_filter(filtered)
-            self.update_memory(input, filtered)
-
-        return filtered
+        return np.array(outputs[2:])
