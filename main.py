@@ -1,33 +1,24 @@
 from pathlib import Path
 import sys
 
-import numpy as np
 import pyaudio
 
 from pydalboard.modules.filter import FilterType
 from pydalboard.pipeline import Pipeline
 from pydalboard.signal import Wav
 from pydalboard.modules import (
-    Delay,
     DelayParameters,
-    Distortion,
     DistortionParameters,
-    Filter,
     FilterParameters,
-    Gain,
-    GainParameters,
-    Overdrive,
     OverdriveParameters,
-    PitchShifting,
     PitchShiftingParameters,
-    Saturation,
     SaturationParameters,
 )
 from pydalboard.signal.base import SignalInfo
 from pydalboard.signal.oscillators import Oscillator, Waveform
 
+
 # For testing purposes, the modules are instanciated
-# The sample rate of 44_100 is arbitrary
 distortion = DistortionParameters(drive=12.0)
 delay = DelayParameters(delay=300, feedback=0.4)
 filter = FilterParameters(
@@ -127,11 +118,11 @@ def play_file(*, file_path: str, buffer_size: int = 64):
     # Create the pipeline
     pipeline = Pipeline(wav_source)
     # pipeline.modules.append(pitch)
-    # pipeline.modules.append(saturation)
-    # pipeline.modules.append(overdrive)
-    # pipeline.modules.append(distortion)
     # pipeline.modules.append(filter)
-    pipeline.add_module(delay)
+    # pipeline.add_module(saturation)
+    # pipeline.add_module(overdrive)
+    pipeline.add_module(distortion)
+    # pipeline.add_module(delay)
 
     # Play the audio
     while True:

@@ -2,6 +2,9 @@ import numpy as np
 
 from pydalboard.modules.base import Module, ModuleParams
 from pydalboard.modules.delay import Delay, DelayParameters
+from pydalboard.modules.drive.distortion import Distortion, DistortionParameters
+from pydalboard.modules.drive.overdrive import Overdrive, OverdriveParameters
+from pydalboard.modules.drive.saturation import Saturation, SaturationParameters
 from pydalboard.signal import SignalSource
 
 
@@ -11,9 +14,25 @@ class Pipeline:
         self.modules: list[Module] = []
 
     def add_module(self, module_parameters: ModuleParams) -> None:
-        match type(module_parameters):
-            case DelayParameters:
+        match module_parameters:
+            case DelayParameters():
+                print("DelayParameters")
                 self.modules.append(Delay(self.source.signal_info, module_parameters))
+            case DistortionParameters():
+                print("DistortionParameters")
+                self.modules.append(
+                    Distortion(self.source.signal_info, module_parameters)
+                )
+            case OverdriveParameters():
+                print("OverdriveParameters")
+                self.modules.append(
+                    Overdrive(self.source.signal_info, module_parameters)
+                )
+            case SaturationParameters():
+                print("SaturationParameters")
+                self.modules.append(
+                    Saturation(self.source.signal_info, module_parameters)
+                )
 
     def run(self) -> np.ndarray:
         buffer = self.source.get_signal()
