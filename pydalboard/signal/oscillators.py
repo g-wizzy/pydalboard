@@ -37,6 +37,7 @@ class Oscillator(SignalSource):
 
         # Current position in the waveform
         self.t = 0
+        self.delta_t = self.info.buffer_size / self.info.sample_rate * self.frequency
         self.cycles_played = 0
 
         # Precompute waveform table
@@ -55,9 +56,8 @@ class Oscillator(SignalSource):
         if self.cycles is not None and self.cycles_played >= self.cycles:
             return np.zeros((self.info.buffer_size, 2), dtype=np.float32)
 
-        delta_t = self.info.buffer_size / self.info.sample_rate * self.frequency
-        buffer = self._compute_buffer(delta_t)
-        self.t += delta_t
+        buffer = self._compute_buffer()
+        self.t += self.delta_t
 
         if self.t >= 1:
             cycles, self.t = divmod(self.t, 1)
@@ -65,12 +65,12 @@ class Oscillator(SignalSource):
 
         return buffer
 
-    def _compute_buffer(self, delta_t: float) -> np.ndarray:
+    def _compute_buffer(self) -> np.ndarray:
         indices = [
             int(t * self.table_size) % self.table_size
             for t in np.linspace(
                 self.t + self.phase,
-                self.t + self.phase + delta_t,
+                self.t + self.phase + self.delta_t,
                 num=self.info.buffer_size,
             )
         ]
