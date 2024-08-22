@@ -5,6 +5,7 @@ from pydalboard.modules.delay import Delay, DelayParameters
 from pydalboard.modules.drive.distortion import Distortion, DistortionParameters
 from pydalboard.modules.drive.overdrive import Overdrive, OverdriveParameters
 from pydalboard.modules.drive.saturation import Saturation, SaturationParameters
+from pydalboard.modules.filter import Filter, FilterParameters
 from pydalboard.signal import SignalSource
 
 
@@ -16,20 +17,18 @@ class Pipeline:
     def add_module(self, module_parameters: ModuleParams) -> None:
         match module_parameters:
             case DelayParameters():
-                print("DelayParameters")
                 self.modules.append(Delay(self.source.signal_info, module_parameters))
+            case FilterParameters():
+                self.modules.append(Filter(self.source.signal_info, module_parameters))
             case DistortionParameters():
-                print("DistortionParameters")
                 self.modules.append(
                     Distortion(self.source.signal_info, module_parameters)
                 )
             case OverdriveParameters():
-                print("OverdriveParameters")
                 self.modules.append(
                     Overdrive(self.source.signal_info, module_parameters)
                 )
             case SaturationParameters():
-                print("SaturationParameters")
                 self.modules.append(
                     Saturation(self.source.signal_info, module_parameters)
                 )
