@@ -1,0 +1,12 @@
+[project]
+name = "pydalboard"
+version = "0.0.1"
+description = "Have fun with sound effects"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "matplotlib>=3.10.5",
+    "numpy>=2.3.2",
+    "pyaudio>=0.2.14",
+    "scipy>=1.16.1",
+]
