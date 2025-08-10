@@ -1,7 +1,6 @@
 from pathlib import Path
 import sys
 
-import numpy as np
 import pyaudio
 
 from pydalboard.modules.filter import FilterType
@@ -14,8 +13,6 @@ from pydalboard.modules import (
     DistortionParameters,
     Filter,
     FilterParameters,
-    Gain,
-    GainParameters,
     Overdrive,
     OverdriveParameters,
     PitchShifting,
