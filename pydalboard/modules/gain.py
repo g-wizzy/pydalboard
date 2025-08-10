@@ -11,14 +11,11 @@ class GainParameters:
     gain: float
     "Amount of gain to add/remove to/from the signal"
 
-
-    min: float = -66.0 # From Ableton Live Utility plugin
+    min: float = -66.0  # From Ableton Live Utility plugin
     "Minimal value the gain can reduce the incoming signal to"
 
-
-    max: float = 36.0 # From Ableton Live Utility plugin
+    max: float = 36.0  # From Ableton Live Utility plugin
     "Maximum value the gain can increase the incoming signal to"
-
 
     def __post_init__(self):
         self.gain = min(max(self.min, self.gain), self.max)

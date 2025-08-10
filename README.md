@@ -14,7 +14,7 @@ brew install portaudio
 Sync dependencies:
 
 ```bash
-uv sync
+make sync
 ```
 
 Run application:

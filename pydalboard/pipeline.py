@@ -21,5 +21,5 @@ class Pipeline:
         # Signal was converted to float for processing.
         # We need to convert it back to its original format for ouptut
         frame = signal_info.convert_to_format(frame)
-        
+
         return frame

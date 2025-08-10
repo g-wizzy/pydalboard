@@ -6,11 +6,11 @@ from pydalboard.signal import SignalInfo
 from pydalboard.modules.base import Module
 from pydalboard.modules.gain import Gain, GainParameters
 
+
 @dataclass
-class SaturationParameters():
+class SaturationParameters:
     drive: float
     "Amount of drive to add to the signal (can be negative to reduce incoming signal)"
-
 
     def __post_init__(self):
         # From Ableton Live Saturator plugin

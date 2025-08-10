@@ -10,3 +10,8 @@ dependencies = [
     "pyaudio>=0.2.14",
     "scipy>=1.16.1",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.8",
+]
